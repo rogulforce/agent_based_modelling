@@ -18,34 +18,56 @@ class Lattice:
         self.size = size
         self.lattice = np.array(np.random.random((size, size)) < p, dtype=int)
 
-        self.burning_trees = None
-        self.burned_trees = None
-        self.living_trees = None
+        self.burning_trees = []
+        self.burned_trees = []
+        self.living_trees = []
 
         self._update_living_trees()
 
+        self.run = True
+
     def _update_burning_trees(self):
-        self.burning_trees = np.argwhere(self.lattice == 2)
+        self.burning_trees = np.where(self.lattice == 2)
 
     def _update_burned_trees(self):
-        self.burning_trees = np.argwhere(self.lattice == -1)
+        self.burned_trees = np.where(self.lattice == -1)
 
     def _update_living_trees(self):
-        self.burning_trees = np.argwhere(self.lattice == 1)
+        self.living_trees = np.where(self.lattice == 1)
 
     def play(self, gif = False):
         self._set_initial_fire('left')
-        while self._update_state:
-            self._update_state()
+        while self.run:
+            print(self.lattice)
+            self.run = self._update_state()
 
     def _update_state(self):
         """ """
-        if not self.burning_trees: # if there is nothing to burn
+        if not (self.burning_trees[0].size and self.burning_trees[1].size): # if there is nothing to burn
+            print('end of data')
             return False
 
-        # trees_to_burn = []
-        # for tree in burning_trees.to_list():
-        #     trees_to_burn.append([it for it in self.get_neighbours(tree)])
+        # get trees to be burned
+        trees_to_burn = []
+        for tree in to_list(self.burning_trees):
+            # print([it for it in self.get_neighbours(tree)])
+            trees_to_burn.extend([it for it in self.get_neighbours(tree)])
+
+        # print('living',to_list(self.living_trees))
+        # print('toburn',trees_to_burn)
+
+        trees_to_burn = [it for it in trees_to_burn if it in to_list(self.living_trees)]
+        trees_to_burn = from_list(trees_to_burn)
+
+        # update living trees.
+        self._update_living_trees()
+
+        # burning trees -> burned trees
+        self._burn_trees()
+        # living trees -> burning trees
+        self.lattice[trees_to_burn[0], trees_to_burn[1]] = 2
+        self._update_burning_trees()
+
         return True
 
     def get_neighbours(self, index: tuple[int, int]):
@@ -59,30 +81,10 @@ class Lattice:
         """ Method burning trees."""
         self.lattice[self.burning_trees[0], self.burning_trees[1]] = -1
 
-    def _set_fire(self):
-
-        # get trees to be burned
-        trees_to_burn = []
-        for tree in self.burning_trees.to_list():
-            trees_to_burn.append([it for it in self.get_neighbours(tree)])
-        trees_to_burn = [it for it in trees_to_burn if it in self.living_trees.to_list()]
-        trees_to_burn = from_list(trees_to_burn)
-        # no need to update living trees.
-
-        # burning trees -> burned trees
-        self._burn_trees()
-
-        # living trees -> burning trees
-        self.lattice[trees_to_burn[0], trees_to_burn[1]] = 2
-        self._update_burning_trees()
-
-
-
-
     def _set_initial_fire(self, side: str = 'left'):
         """ Method setting initial fire on the lattice. """
         if side == 'left':
-            self.lattice[:, 0] = 2
+            self.lattice[:, 0] = self.lattice[:, 0] * 2
         # TODO: add other sides
 
         self._update_burning_trees()
@@ -92,13 +94,18 @@ def from_list(list_of_cords: list[list[int, int]]):
     return [[it[0] for it in list_of_cords],[it[1] for it in list_of_cords]]
 
 
+def to_list(cords: list[list[int], list[int]]):
+    return [it for it in zip(cords[0], cords[1])]
+
 
 if __name__ == "__main__":
-    a = Lattice(3, 0.9)
-    a._set_initial_fire()
-    a.lattice[(1,2), (0,1)] = 5
-    print(a.lattice)
-    l = np.argwhere(a.lattice == 10)
-    print(l)
-    # print(a.lattice[l[1][0],l[1][1]])
-    a._update_state()
+    a = Lattice(5, 0.5)
+
+    """ check 1"""
+    # a._set_initial_fire()
+    # print(a.lattice)
+    # l = np.where(a.lattice == 2)[1]
+    # print(l)
+
+    a.play()
+
