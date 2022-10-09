@@ -1,12 +1,18 @@
 # Piotr Rogula, 249801
 import itertools
-
 import numpy as np
 
+# gif
+from matplotlib import pyplot as plt
+from matplotlib import colors
+from natsort import natsorted
+import os
+import imageio.v2 as imageio
 
-class Lattice:
-    def __init__(self, size: int, p: float):
-        """ Lattice class. For each there is probability p for tree to be placed at initial state.
+
+class Forest:
+    def __init__(self, size: int, p: float, gif_tool=None):
+        """ Forest class. For each there is probability p for tree to be placed at initial state.
         States:
             0 = empty
             1 = tree placed
@@ -26,6 +32,8 @@ class Lattice:
 
         self.run = True
 
+        self.gif_tool = gif_tool
+
     def _update_burning_trees(self):
         self.burning_trees = np.where(self.lattice == 2)
 
@@ -36,9 +44,14 @@ class Lattice:
         self.living_trees = np.where(self.lattice == 1)
 
     def play(self, gif = False):
+
         self._set_initial_fire('left')
         while self.run:
-            # print(self.lattice) # debug
+
+            # image save
+            if self.gif_tool:
+                self.gif_tool.save_pic(data=self.lattice)
+
             self.run = self._update_state()
 
     def _update_state(self):
@@ -56,7 +69,8 @@ class Lattice:
         # print('living',to_list(self.living_trees))
         # print('toburn',trees_to_burn)
 
-        trees_to_burn = [it for it in trees_to_burn if it in to_list(self.living_trees)]
+        trees_to_burn = [it for it in trees_to_burn if it in to_list(self.living_trees) and
+                         it not in to_list(self.burning_trees)]
         trees_to_burn = from_list(trees_to_burn)
 
         # update living trees.
@@ -78,21 +92,65 @@ class Lattice:
         return neighbours
 
     def _burn_trees(self):
-        """ Method burning trees."""
+        """ Method getting trees from state 'burning' to 'burned'"""
         self.lattice[self.burning_trees[0], self.burning_trees[1]] = -1
 
     def _set_initial_fire(self, side: str = 'left'):
         """ Method setting initial fire on the lattice. """
         if side == 'left':
             self.lattice[:, 0] = self.lattice[:, 0] * 2
-        # TODO: add other sides
+        # TODO: in future: add other sides.
 
         self._update_burning_trees()
 
     def fire_hit_edge(self, side: str = 'right'):
         if side == 'right':
             return -1 in self.lattice[:, -1]
-        # TODO: add other sides
+        # TODO: in future: add other sides
+
+    def save_gif(self):
+        if self.gif_tool:
+            self.gif_tool.save_gif()
+
+
+class GifTool:
+    def __init__(self, pic_dir: str = 'data/temp', gif_dir: str = 'data/gif'):
+        self.pic_dir = pic_dir
+        self.gif_dir = gif_dir
+
+        self.clear_dir(self.pic_dir)
+
+        self.cmap = colors.ListedColormap(['grey', 'white', 'green', 'orange'])
+        bounds = [-1.5,-.5, .5, 1.5, 2.5]
+        self.norm = colors.BoundaryNorm(bounds, self.cmap.N)
+        self.img_num = 0
+
+    def save_pic(self, data):
+        self.visualize(data)
+        plt.savefig(f'data/temp/fig{self.img_num}')
+        plt.close()
+        self.img_num += 1
+
+    def visualize(self, data):
+        plt.figure(figsize=(10, 10))
+        img = plt.imshow(data, interpolation='nearest', origin='lower',
+                         cmap=self.cmap, norm=self.norm)
+        # return img
+
+    def save_gif(self,name):
+        images = []
+        for file_name in natsorted(os.listdir(self.pic_dir)):
+            if file_name.endswith('.png'):
+                file_path = os.path.join(self.pic_dir, file_name)
+                images.append(imageio.imread(file_path))
+
+        imageio.mimsave(f'{self.gif_dir}/{name}', images)
+
+    @staticmethod
+    def clear_dir(dir):
+        for file_name in os.listdir(dir):
+            if file_name.endswith('.png'):
+                os.remove(f'{dir}/{file_name}')
 
 
 def from_list(list_of_cords: list[list[int, int]]):
@@ -104,9 +162,8 @@ def to_list(cords: list[list[int], list[int]]):
 
 
 if __name__ == "__main__":
-    # a = Lattice(5, 0.5)
-    #
-    # a.play()
-    # print(a.fire_hit_edge())
-    z = [True, True, False]
-    print(np.mean(z))
+    a = Forest(10, 0.5, gif_tool=GifTool())
+
+    a.play()
+
+    a.gif_tool.save_gif('1.gif')
