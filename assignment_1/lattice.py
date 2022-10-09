@@ -38,13 +38,13 @@ class Lattice:
     def play(self, gif = False):
         self._set_initial_fire('left')
         while self.run:
-            print(self.lattice)
+            # print(self.lattice) # debug
             self.run = self._update_state()
 
     def _update_state(self):
         """ """
         if not (self.burning_trees[0].size and self.burning_trees[1].size): # if there is nothing to burn
-            print('end of data')
+            # print('end of data') # debug
             return False
 
         # get trees to be burned
@@ -89,6 +89,11 @@ class Lattice:
 
         self._update_burning_trees()
 
+    def fire_hit_edge(self, side: str = 'right'):
+        if side == 'right':
+            return -1 in self.lattice[:, -1]
+        # TODO: add other sides
+
 
 def from_list(list_of_cords: list[list[int, int]]):
     return [[it[0] for it in list_of_cords],[it[1] for it in list_of_cords]]
@@ -99,13 +104,9 @@ def to_list(cords: list[list[int], list[int]]):
 
 
 if __name__ == "__main__":
-    a = Lattice(5, 0.5)
-
-    """ check 1"""
-    # a._set_initial_fire()
-    # print(a.lattice)
-    # l = np.where(a.lattice == 2)[1]
-    # print(l)
-
-    a.play()
-
+    # a = Lattice(5, 0.5)
+    #
+    # a.play()
+    # print(a.fire_hit_edge())
+    z = [True, True, False]
+    print(np.mean(z))
