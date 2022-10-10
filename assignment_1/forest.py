@@ -69,9 +69,7 @@ class Forest:
         # print('living',to_list(self.living_trees))
         # print('toburn',trees_to_burn)
 
-        trees_to_burn = [it for it in trees_to_burn if it in to_list(self.living_trees) and
-                         it not in to_list(self.burning_trees)]
-        trees_to_burn = from_list(trees_to_burn)
+        trees_to_burn = self._audit_trees_to_burn(trees_to_burn)
 
         # update living trees.
         self._update_living_trees()
@@ -83,6 +81,12 @@ class Forest:
         self._update_burning_trees()
 
         return True
+
+    def _audit_trees_to_burn(self, tree_list: list[list[int,int]]):
+        """ method removing neighbours which are not trees and which are already burning."""
+        trees_to_burn = [it for it in tree_list if it in to_list(self.living_trees) and
+                         it not in to_list(self.burning_trees)]
+        return from_list(trees_to_burn)
 
     def get_neighbours(self, index: tuple[int, int]):
         """ Method getting all the neighbours of given index (row_num, col_num)"""
@@ -137,20 +141,37 @@ class GifTool:
                          cmap=self.cmap, norm=self.norm)
         # return img
 
-    def save_gif(self,name):
+    def save_gif(self, name, **kwargs):
         images = []
         for file_name in natsorted(os.listdir(self.pic_dir)):
             if file_name.endswith('.png'):
                 file_path = os.path.join(self.pic_dir, file_name)
                 images.append(imageio.imread(file_path))
 
-        imageio.mimsave(f'{self.gif_dir}/{name}', images)
+        imageio.mimsave(f'{self.gif_dir}/{name}', images, **kwargs)
 
     @staticmethod
-    def clear_dir(dir):
-        for file_name in os.listdir(dir):
+    def clear_dir(directory):
+        for file_name in os.listdir(directory):
             if file_name.endswith('.png'):
-                os.remove(f'{dir}/{file_name}')
+                os.remove(f'{directory}/{file_name}')
+
+
+class WindyForest(Forest):
+    def __init__(self, size: int, p: float, gif_tool=None, wind_power: float = 1):
+        super(WindyForest, self).__init__(size=size, p=p, gif_tool=gif_tool)
+        self.wind_power = wind_power
+
+    def _audit_trees_to_burn(self, tree_list: list[list[int, int]]):
+        trees_to_burn = [it for it in tree_list if it in to_list(self.living_trees) and
+                         it not in to_list(self.burning_trees)]
+
+        # wind power working
+        for tree in trees_to_burn:
+            if np.random.random() > self.wind_power:
+                trees_to_burn.remove(tree)
+
+        return from_list(trees_to_burn)
 
 
 def from_list(list_of_cords: list[list[int, int]]):
@@ -162,8 +183,15 @@ def to_list(cords: list[list[int], list[int]]):
 
 
 if __name__ == "__main__":
-    a = Forest(10, 0.5, gif_tool=GifTool())
+    # a = Forest(10, 0.5, gif_tool=GifTool())
+    #
+    # a.play()
+    #
+    # a.gif_tool.save_gif('1.gif')
+
+    a = WindyForest(10, 0.5, gif_tool=GifTool(), wind_power=0.5)
 
     a.play()
 
-    a.gif_tool.save_gif('1.gif')
+    a.gif_tool.save_gif('1.gif', duration=1)
+
