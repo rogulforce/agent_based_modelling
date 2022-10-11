@@ -1,5 +1,7 @@
 # Piotr Rogula, 249801
 import itertools
+from copy import copy
+
 import numpy as np
 
 # gif
@@ -20,9 +22,12 @@ class Forest:
             -1 = burned tree
 
         Args:
-            size (int): >0. size of the L x L lattice """
+            size (int): >0. size of the L x L lattice
+             p: density of the forest
+             gif_tool (optional). Visualisation tool. Defaults to None."""
         self.size = size
         self.lattice = np.array(np.random.random((size, size)) < p, dtype=int)
+        self.initial_lattice = copy(self.lattice)
 
         self.burning_trees = []
         self.burned_trees = []
@@ -43,8 +48,12 @@ class Forest:
     def _update_living_trees(self):
         self.living_trees = np.where(self.lattice == 1)
 
-    def play(self, gif = False):
+    def play(self, gif=False):
+        """ Main method executing the model
 
+        Args:
+            gif: argument defining visualisation of the play.
+        """
         self._set_initial_fire('left')
         while self.run:
 
@@ -55,9 +64,9 @@ class Forest:
             self.run = self._update_state()
 
     def _update_state(self):
-        """ """
+        """ Method updating state of the play."""
         if not (self.burning_trees[0].size and self.burning_trees[1].size): # if there is nothing to burn
-            # print('end of data') # debug
+            # end of data
             return False
 
         # get trees to be burned
@@ -82,14 +91,22 @@ class Forest:
 
         return True
 
-    def _audit_trees_to_burn(self, tree_list: list[list[int,int]]):
-        """ method removing neighbours which are not trees and which are already burning."""
+    def _audit_trees_to_burn(self, tree_list: list[list[int, int]]):
+        """ method removing neighbours which are not trees and which are already burning.
+        Args:
+            tree_list: list of trees to audit.
+        Returns:
+             audited list"""
         trees_to_burn = [it for it in tree_list if it in to_list(self.living_trees) and
                          it not in to_list(self.burning_trees)]
         return from_list(trees_to_burn)
 
     def get_neighbours(self, index: tuple[int, int]):
-        """ Method getting all the neighbours of given index (row_num, col_num)"""
+        """ Method getting all the neighbours of given index (row_num, col_num)
+        args:
+            index: given index
+        Returns:
+            neighbour list. """
         nb_row = [it for it in [index[0] - 1, index[0], index[0] + 1] if 0 <= it < self.size]
         nb_col = [it for it in [index[1] - 1, index[1], index[1] + 1] if 0 <= it < self.size]
         neighbours = itertools.product(nb_row, nb_col)
@@ -108,16 +125,60 @@ class Forest:
         self._update_burning_trees()
 
     def fire_hit_edge(self, side: str = 'right'):
+        """ Method giving boolean telling if fire hit given edge.
+        args:
+            side: defautls to 'right'.
+        returns:
+            bool. True for -1 in the <side> side, otherwise, False."""
         if side == 'right':
             return -1 in self.lattice[:, -1]
         # TODO: in future: add other sides
 
     def save_gif(self):
+        """ Method saving gif using <self.gif_tool>"""
         if self.gif_tool:
             self.gif_tool.save_gif()
 
+    def get_max_cluster_size(self, side: str = 'left'):
+        """ Method getting max cluster size.
+        args:
+            side: starting side
+        returns:
+            int. Number of trees in max cluster."""
+
+        max_cluster = 0
+        # points with initial fire
+        self.lattice = copy(self.initial_lattice)
+        self._update_living_trees()
+        self.run = True
+
+        self._set_initial_fire(side=side)
+        initial_fire = np.argwhere(self.lattice == 2).tolist()
+
+        for tree in initial_fire:
+            if self.lattice[tree[0], tree[1]] == -1: # tree already burned
+                continue
+
+            # restoring burned trees.
+            self.lattice = copy(self.initial_lattice)
+            self._update_living_trees()
+            # set fire in that one tree
+            self.lattice[tree[0], tree[1]] = 2
+            self._update_burning_trees()
+            print('burning', self.burning_trees)
+
+            while self.run:
+                self.run = self._update_state()
+
+            max_cluster = np.max((max_cluster, np.count_nonzero(self.lattice == -1)))
+
+            self.run = True
+
+        return max_cluster
+
 
 class GifTool:
+    """ tool visualizing the model."""
     def __init__(self, pic_dir: str = 'data/temp', gif_dir: str = 'data/gif'):
         self.pic_dir = pic_dir
         self.gif_dir = gif_dir
@@ -158,6 +219,8 @@ class GifTool:
 
 
 class WindyForest(Forest):
+    """ Forest model with added wind. <wind_power> argument defines probability with which fire is being spread
+    between the trees.  """
     def __init__(self, size: int, p: float, gif_tool=None, wind_power: float = 1):
         super(WindyForest, self).__init__(size=size, p=p, gif_tool=gif_tool)
         self.wind_power = wind_power
@@ -183,15 +246,16 @@ def to_list(cords: list[list[int], list[int]]):
 
 
 if __name__ == "__main__":
-    # a = Forest(10, 0.5, gif_tool=GifTool())
+    a = Forest(5, 0.5, gif_tool=GifTool())
     #
     # a.play()
     #
     # a.gif_tool.save_gif('1.gif')
 
-    a = WindyForest(10, 0.5, gif_tool=GifTool(), wind_power=0.5)
+    # a = WindyForest(5, 0.5, gif_tool=GifTool(), wind_power=0.5)
 
-    a.play()
+    # a.play()
 
-    a.gif_tool.save_gif('1.gif', duration=1)
-
+    # a.gif_tool.save_gif('1.gif', duration=1)
+    # print(a.lattice)
+    print(a.get_max_cluster_size())
