@@ -133,11 +133,6 @@ class Forest:
             return -1 in self.lattice[:, -1]
         # TODO: in future: add other sides
 
-    def save_gif(self):
-        """ Save gif using <self.gif_tool>"""
-        if self.gif_tool:
-            self.gif_tool.save_gif()
-
     def get_max_cluster_size(self, side: str = 'left'):
         """ Get max cluster size.
         args:
