@@ -4,16 +4,11 @@ from copy import copy
 
 import numpy as np
 
-# gif
-from matplotlib import pyplot as plt
-from matplotlib import colors
-from natsort import natsorted
-import os
-import imageio.v2 as imageio
+from gif_tool import GifTool
 
 
 class Forest:
-    def __init__(self, size: int, p: float, gif_tool=None):
+    def __init__(self, size: int, p: float, gif_tool: None | GifTool = None):
         """ Forest class. For each there is probability p for tree to be placed at initial state.
         States:
             0 = empty
@@ -23,8 +18,12 @@ class Forest:
 
         Args:
             size (int): >0. size of the L x L lattice
-             p: density of the forest
-             gif_tool (optional). Visualisation tool. Defaults to None."""
+            p (float): density of the forest
+            gif_tool (optional). Visualisation tool. Defaults to None."""
+
+        if not 0 <= p <= 1:
+            raise "density shall be in range [0,1]"
+
         self.size = size
         self.lattice = np.array(np.random.random((size, size)) < p, dtype=int)
         self.initial_lattice = copy(self.lattice)
@@ -49,7 +48,7 @@ class Forest:
         self.living_trees = np.where(self.lattice == 1)
 
     def play(self, gif=False):
-        """ Main method executing the model
+        """ Execute the model
 
         Args:
             gif: argument defining visualisation of the play.
@@ -64,7 +63,7 @@ class Forest:
             self.run = self._update_state()
 
     def _update_state(self):
-        """ Method updating state of the play."""
+        """ Update state of the play."""
         if not (self.burning_trees[0].size and self.burning_trees[1].size): # if there is nothing to burn
             # end of data
             return False
@@ -92,7 +91,7 @@ class Forest:
         return True
 
     def _audit_trees_to_burn(self, tree_list: list[list[int, int]]):
-        """ method removing neighbours which are not trees and which are already burning.
+        """ Remove trees from <tree_list> which are not trees or have state = burning.
         Args:
             tree_list: list of trees to audit.
         Returns:
@@ -102,7 +101,7 @@ class Forest:
         return from_list(trees_to_burn)
 
     def get_neighbours(self, index: tuple[int, int]):
-        """ Method getting all the neighbours of given index (row_num, col_num)
+        """ Get all the neighbours of given index (row_num, col_num)
         args:
             index: given index
         Returns:
@@ -113,11 +112,11 @@ class Forest:
         return neighbours
 
     def _burn_trees(self):
-        """ Method getting trees from state 'burning' to 'burned'"""
+        """ Get trees from state 'burning' to 'burned'"""
         self.lattice[self.burning_trees[0], self.burning_trees[1]] = -1
 
     def _set_initial_fire(self, side: str = 'left'):
-        """ Method setting initial fire on the lattice. """
+        """ Set initial fire on the lattice. """
         if side == 'left':
             self.lattice[:, 0] = self.lattice[:, 0] * 2
         # TODO: in future: add other sides.
@@ -125,9 +124,9 @@ class Forest:
         self._update_burning_trees()
 
     def fire_hit_edge(self, side: str = 'right'):
-        """ Method giving boolean telling if fire hit given edge.
+        """ Give boolean telling if fire hit given edge.
         args:
-            side: defautls to 'right'.
+            side: Defaults to 'right'.
         returns:
             bool. True for -1 in the <side> side, otherwise, False."""
         if side == 'right':
@@ -135,12 +134,12 @@ class Forest:
         # TODO: in future: add other sides
 
     def save_gif(self):
-        """ Method saving gif using <self.gif_tool>"""
+        """ Save gif using <self.gif_tool>"""
         if self.gif_tool:
             self.gif_tool.save_gif()
 
     def get_max_cluster_size(self, side: str = 'left'):
-        """ Method getting max cluster size.
+        """ Get max cluster size.
         args:
             side: starting side
         returns:
@@ -175,47 +174,6 @@ class Forest:
             self.run = True
 
         return max_cluster
-
-
-class GifTool:
-    """ tool visualizing the model."""
-    def __init__(self, pic_dir: str = 'data/temp', gif_dir: str = 'data/gif'):
-        self.pic_dir = pic_dir
-        self.gif_dir = gif_dir
-
-        self.clear_dir(self.pic_dir)
-
-        self.cmap = colors.ListedColormap(['grey', 'white', 'green', 'orange'])
-        bounds = [-1.5,-.5, .5, 1.5, 2.5]
-        self.norm = colors.BoundaryNorm(bounds, self.cmap.N)
-        self.img_num = 0
-
-    def save_pic(self, data):
-        self.visualize(data)
-        plt.savefig(f'data/temp/fig{self.img_num}')
-        plt.close()
-        self.img_num += 1
-
-    def visualize(self, data):
-        plt.figure(figsize=(10, 10))
-        img = plt.imshow(data, interpolation='nearest', origin='lower',
-                         cmap=self.cmap, norm=self.norm)
-        # return img
-
-    def save_gif(self, name, **kwargs):
-        images = []
-        for file_name in natsorted(os.listdir(self.pic_dir)):
-            if file_name.endswith('.png'):
-                file_path = os.path.join(self.pic_dir, file_name)
-                images.append(imageio.imread(file_path))
-
-        imageio.mimsave(f'{self.gif_dir}/{name}', images, **kwargs)
-
-    @staticmethod
-    def clear_dir(directory):
-        for file_name in os.listdir(directory):
-            if file_name.endswith('.png'):
-                os.remove(f'{directory}/{file_name}')
 
 
 class WindyForest(Forest):
