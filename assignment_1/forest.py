@@ -175,9 +175,14 @@ class Forest:
         rnd_index = random.choice(np.argwhere(self.lattice == 0).tolist())
         self.lattice[rnd_index[0], rnd_index[1]] = 1
 
+    def __restore_trees(self):
+        self._update_burned_trees()
+        self.lattice[self.burned_trees[0], self.burned_trees[1]] = 1
+
     def percolation_threshold_estimator(self):
         self.lattice = np.zeros(shape=(self.size, self.size))
         while not self.fire_hit_edge():
+            self.__restore_trees()
             self.__add_tree()
             self.burning_trees = []
             self.burned_trees = []
@@ -186,7 +191,7 @@ class Forest:
 
             self.play()
 
-        return np.count_nonzero(self.lattice == -1) / (self.size ** 2)
+        return (np.count_nonzero(self.lattice == -1) + np.count_nonzero(self.lattice == 1)) / (self.size ** 2)
 
 
 class WindyForest(Forest):
@@ -214,22 +219,3 @@ def from_list(list_of_cords: list[list[int, int]]):
 
 def to_list(cords: list[list[int], list[int]]):
     return [it for it in zip(cords[0], cords[1])]
-
-
-if __name__ == "__main__":
-    # a = Forest(5, 0.5, gif_tool=GifTool())
-    #
-    # a.play()
-    #
-    # a.gif_tool.save_gif('1.gif')
-
-    # a = WindyForest(5, 0.5, gif_tool=GifTool(), wind_power=0.5)
-
-    # a.play()
-
-    # a.gif_tool.save_gif('1.gif', duration=1)
-    # print(a.lattice)
-    # print(a.get_max_cluster_size())
-    b = Forest(10, 0, gif_tool=GifTool())
-    print(b.percolation_threshold_estimator())
-
