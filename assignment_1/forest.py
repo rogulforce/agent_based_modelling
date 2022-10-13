@@ -1,5 +1,6 @@
 # Piotr Rogula, 249801
 import itertools
+import random
 from copy import copy
 
 import numpy as np
@@ -25,6 +26,7 @@ class Forest:
             raise "density shall be in range [0,1]"
 
         self.size = size
+        self.density = p
         self.lattice = np.array(np.random.random((size, size)) < p, dtype=int)
         self.initial_lattice = copy(self.lattice)
 
@@ -159,7 +161,6 @@ class Forest:
             # set fire in that one tree
             self.lattice[tree[0], tree[1]] = 2
             self._update_burning_trees()
-            print('burning', self.burning_trees)
 
             while self.run:
                 self.run = self._update_state()
@@ -169,6 +170,23 @@ class Forest:
             self.run = True
 
         return max_cluster
+
+    def __add_tree(self):
+        rnd_index = random.choice(np.argwhere(self.lattice == 0).tolist())
+        self.lattice[rnd_index[0], rnd_index[1]] = 1
+
+    def percolation_threshold_estimator(self):
+        self.lattice = np.zeros(shape=(self.size, self.size))
+        while not self.fire_hit_edge():
+            self.__add_tree()
+            self.burning_trees = []
+            self.burned_trees = []
+            self.run = True
+            self._update_living_trees()
+
+            self.play()
+
+        return np.count_nonzero(self.lattice == -1) / (self.size ** 2)
 
 
 class WindyForest(Forest):
@@ -199,7 +217,7 @@ def to_list(cords: list[list[int], list[int]]):
 
 
 if __name__ == "__main__":
-    a = Forest(5, 0.5, gif_tool=GifTool())
+    # a = Forest(5, 0.5, gif_tool=GifTool())
     #
     # a.play()
     #
@@ -211,4 +229,7 @@ if __name__ == "__main__":
 
     # a.gif_tool.save_gif('1.gif', duration=1)
     # print(a.lattice)
-    print(a.get_max_cluster_size())
+    # print(a.get_max_cluster_size())
+    b = Forest(10, 0, gif_tool=GifTool())
+    print(b.percolation_threshold_estimator())
+
