@@ -1,3 +1,4 @@
+# Piotr Rogula, 249801
 from forest import Forest, GifTool, WindyForest
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,8 +9,6 @@ from functools import partial
 
 
 def single_step(forest, _):
-
-
     forest.__init__(forest.size, forest.density)
     max_cluster = forest.get_max_cluster_size()
     return max_cluster

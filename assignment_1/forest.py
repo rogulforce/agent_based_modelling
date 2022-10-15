@@ -6,6 +6,7 @@ from copy import copy
 import numpy as np
 
 from gif_tool import GifTool
+from utils import to_list, from_list
 
 
 class Forest:
@@ -211,11 +212,3 @@ class WindyForest(Forest):
                 trees_to_burn.remove(tree)
 
         return from_list(trees_to_burn)
-
-
-def from_list(list_of_cords: list[list[int, int]]):
-    return [[it[0] for it in list_of_cords],[it[1] for it in list_of_cords]]
-
-
-def to_list(cords: list[list[int], list[int]]):
-    return [it for it in zip(cords[0], cords[1])]
