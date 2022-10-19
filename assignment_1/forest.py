@@ -194,6 +194,106 @@ class Forest:
 
         return (np.count_nonzero(self.lattice == -1) + np.count_nonzero(self.lattice == 1)) / (self.size ** 2)
 
+    def hoshen_kopelman(self):
+        """ hoshen kopelman algorithm. """
+        largest_label = 4
+        for y in range(0, self.size):  # row
+            for x in range(0, self.size):  # column
+                point = (y, x)
+                if (y, x) not in to_list(self.living_trees):
+                    continue
+
+                left = self.get_n(point, 'left')
+                above = self.get_n(point, 'above')
+                left_above = self.get_n(point, 'left_above')
+                right_above = self.get_n(point, 'right_above')
+
+                # new label
+                if left == 0 and above == 0 and left_above == 0 and right_above == 0:
+                    largest_label += 1
+                    self.lattice[y, x] = largest_label
+
+                # 1 label
+                elif left != 0 and above == 0 and left_above == 0 and right_above == 0:
+                    self.lattice[y, x] = left
+                elif left == 0 and above != 0 and left_above == 0 and right_above == 0:
+                    self.lattice[y, x] = above
+                elif left == 0 and above == 0 and left_above != 0 and right_above == 0:
+                    self.lattice[y, x] = left_above
+                elif left == 0 and above == 0 and left_above == 0 and right_above != 0:
+                    self.lattice[y, x] = right_above
+
+                # 2 labels
+                elif left != 0 and above != 0 and left_above == 0 and right_above == 0:
+                    self.lattice[self.lattice == above] = left
+                    self.lattice[y, x] = left
+                elif left != 0 and above == 0 and left_above != 0 and right_above == 0:
+                    self.lattice[self.lattice == left_above] = left
+                    self.lattice[y, x] = left
+                elif left != 0 and above == 0 and left_above == 0 and right_above != 0:
+                    self.lattice[self.lattice == right_above] = left
+                    self.lattice[y, x] = left
+                elif left == 0 and above != 0 and left_above != 0 and right_above == 0:
+                    self.lattice[self.lattice == left_above] = above
+                    self.lattice[y, x] = above
+                elif left == 0 and above != 0 and left_above == 0 and right_above != 0:
+                    self.lattice[self.lattice == right_above] = above
+                    self.lattice[y, x] = above
+                elif left == 0 and above == 0 and left_above != 0 and right_above != 0:
+                    self.lattice[self.lattice == right_above] = left_above
+                    self.lattice[y, x] = left_above
+
+                # 3 labels
+                elif left != 0 and above != 0 and left_above != 0 and right_above == 0:
+                    self.lattice[self.lattice == left_above] = left
+                    self.lattice[self.lattice == above] = left
+                    self.lattice[y, x] = left
+                elif left != 0 and above != 0 and left_above == 0 and right_above != 0:
+                    self.lattice[self.lattice == right_above] = left
+                    self.lattice[self.lattice == above] = left
+                    self.lattice[y, x] = left
+                elif left != 0 and above == 0 and left_above != 0 and right_above != 0:
+                    self.lattice[self.lattice == left_above] = left
+                    self.lattice[self.lattice == right_above] = left
+                    self.lattice[y, x] = left
+                elif left == 0 and above != 0 and left_above != 0 and right_above != 0:
+                    self.lattice[self.lattice == left_above] = above
+                    self.lattice[self.lattice == right_above] = above
+                    self.lattice[y, x] = above
+
+                # 4 labels
+                elif left != 0 and above != 0 and left_above != 0 and right_above != 0:
+                    self.lattice[self.lattice == above] = left
+                    self.lattice[self.lattice == left_above] = left
+                    self.lattice[self.lattice == right_above] = left
+                    self.lattice[y, x] = left
+
+        # get occurences of max label
+        max_cnt = 0
+        for item in np.unique(self.lattice):
+            if item == 0:
+                continue
+            else:
+                max_cnt = max(max_cnt, np.count_nonzero(self.lattice == item))
+        return max_cnt
+
+    def get_n(self, point: tuple[int, int], ttype: str):
+        """ get value of the neighbour if exists, else: 0"""
+        y, x = point
+        if ttype == 'left':
+            if x > 0:
+                return self.lattice[y, x-1]
+        elif ttype == 'above':
+            if y > 0:
+                return self.lattice[y-1, x]
+        elif ttype == 'left_above':
+            if y > 0 and x > 0:
+                return self.lattice[y-1, x-1]
+        elif ttype == 'right_above':
+            if y > 0 and x < self.size - 1:
+                return self.lattice[y-1, x+1]
+        return 0
+
 
 class WindyForest(Forest):
     """ Forest model with added wind. <wind_power> argument defines probability with which fire is being spread
@@ -212,3 +312,10 @@ class WindyForest(Forest):
                 trees_to_burn.remove(tree)
 
         return from_list(trees_to_burn)
+
+
+if __name__ == "__main__":
+    a = Forest(size=5, p=.5)
+    # print((0,0) in to_list(a.living_trees))
+    print(a.hoshen_kopelman())
+    print(a.lattice)
