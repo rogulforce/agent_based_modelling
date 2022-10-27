@@ -2,17 +2,10 @@
 import itertools
 import numpy as np
 # from assignment_3.utils import to_list, from_list
-# from .utils import to_list, from_list
+from utils import to_list, from_list
 import random
 from copy import copy
-
-
-def from_list(list_of_cords):
-    return [[it[0] for it in list_of_cords], [it[1] for it in list_of_cords]]
-
-
-def to_list(cords):
-    return [it for it in zip(cords[0], cords[1])]
+from gif_tool import GifTool
 
 # 1 iteration - get all unhappy agents, move it one by one
 
@@ -28,7 +21,7 @@ def to_list(cords):
 
 class SchellingModel:
     def __init__(self, size: int = 100, neighbourhood_range: int = 1, n_agents: tuple[int, int] = (250, 250),
-                 j_t: tuple[float, float] = (0.5, 0.5)):
+                 j_t: tuple[float, float] = (0.5, 0.5), gif_tool: None | GifTool = None):
         self.n_agents = n_agents
         self.size = size
         self.neighbourhood_range = neighbourhood_range
@@ -41,9 +34,7 @@ class SchellingModel:
 
         self.run = True
 
-    # def _get_m_parameter(self):
-    #     """ Get m (num of neighbours) parameter according to neighbourhood range. """
-    #     return 4 *(self.neighbourhood_range+1) * self.neighbourhood_range
+        self.gif_tool = gif_tool
 
     def _generate_lattice(self):
         self.lattice = np.zeros(self.size ** 2 - np.sum(self.n_agents))
@@ -67,21 +58,19 @@ class SchellingModel:
             agent_index: given agent_index
         Returns:
             neighbour list. """
-        nb_row = [it for it in range(agent_index[0] - self.neighbourhood_range, (agent_index[0] + self.neighbourhood_range + 1) % self.size)
-                  # if 0 <= it < self.size
-                  ]
-        nb_col = [it for it in range(agent_index[1] - self.neighbourhood_range, (agent_index[1] + self.neighbourhood_range + 1) % self.size)
-                  # if 0 <= it < self.size
-                  ]
+        nb_row = [it % self.size for it in range(agent_index[0] - self.neighbourhood_range,
+                  (agent_index[0] + self.neighbourhood_range + 1))]
+        nb_col = [it % self.size for it in range(agent_index[1] - self.neighbourhood_range,
+                  (agent_index[1] + self.neighbourhood_range + 1))]
         neighbours = itertools.product(nb_row, nb_col)
-
         return [it for it in neighbours if it != agent_index]
 
     def get_happiness(self, agent_index: tuple[int, int], agent_type: int):
-
         neighbours = from_list(self.get_neighbours(agent_index))
         occupied_cells = np.sum(self.lattice[neighbours[0], neighbours[1]] != 0)
         similar_cells = np.sum(self.lattice[neighbours[0], neighbours[1]] == agent_type)
+        # print(f'neighbours: {neighbours}')
+        # print(f'{similar_cells} / {occupied_cells}')
 
         if occupied_cells == 0:
             return 1
@@ -97,11 +86,16 @@ class SchellingModel:
     def play(self, iter_num):
 
         for i in range(iter_num):
+            # image save
+            if self.gif_tool:
+                self.gif_tool.save_pic(data=self.lattice, title=f'iteration {i}')
             self.single_iteration()
             if not self.run:
-                print(f'{i} iterations')
-                break
-        print(self.lattice)
+
+                # print(f'{i} iterations')
+                return i
+        # print(self.lattice)
+        return iter_num
 
     def single_iteration(self):
         self.run = False
@@ -113,8 +107,9 @@ class SchellingModel:
 
         for agent in list_of_agents:
             agent_type = self._get_type(agent)
-            # check for empty spots
-            print(agent, self.validate_happiness(agent, agent_type))
+
+            # print(agent, agent_type, self.validate_happiness(agent, agent_type))
+
             if not self.validate_happiness(agent, agent_type):  # agent is unhappy
                 self.move(agent, agent_type)
                 self.run = True
@@ -133,7 +128,8 @@ class SchellingModel:
 
 
 if __name__ == "__main__":
-    a = SchellingModel(size=10, neighbourhood_range=1, n_agents=(15, 15), j_t=(0.5, 0.5))
+    gif_tool = GifTool()
+    a = SchellingModel(size=100, neighbourhood_range=1, n_agents=(250, 250), j_t=(0.5, 0.5), gif_tool=gif_tool)
     # print(a.lattice)
     # print(a.get_neighbours((5,8)))
     # print(a._get_m_parameter())
@@ -142,8 +138,9 @@ if __name__ == "__main__":
     # n = from_list(a.get_neighbours((0, 0)))
     # a.lattice[n[0], n[1]] = 8
 
-    index = (2, 2)
-    print(a.lattice)
-    print(a.validate_happiness(index))
-    # a.play(100)
+    # index = (2, 2)
+    # print(a.lattice)
+    # print(a.validate_happiness(index))
+    a.play(10)
+    gif_tool.save_gif('test.gif', duration=1)
     # TODO: test that in jupyter
