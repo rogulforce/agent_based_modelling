@@ -73,7 +73,7 @@ class SchellingModel:
         # print(f'{similar_cells} / {occupied_cells}')
 
         if occupied_cells == 0:
-            return 1
+            return self.__no_neighbours_validation()  # returns 1
 
         return similar_cells / occupied_cells
 
@@ -114,6 +114,10 @@ class SchellingModel:
                 self.move(agent, agent_type)
                 self.run = True
 
+    @staticmethod
+    def __no_neighbours_validation():
+        return 1
+
     def move(self, agent, agent_type):
         new_place = random.choice(self.empty_spots)
 
@@ -125,6 +129,18 @@ class SchellingModel:
 
         self.agents.append(new_place)
         self.empty_spots.remove(new_place)
+
+    def get_segregation_index(self):
+        agents = self._update_agents()
+
+        return np.mean([self.get_happiness(agent, self._get_type(agent)) for agent in agents])
+
+
+class SchellingModelUnhappy(SchellingModel):
+    """ Schelling Model where a cell w/o occupied cells around is considered as unhappy."""
+    @staticmethod
+    def __no_neighbours_validation():
+        return 0
 
 
 if __name__ == "__main__":
@@ -144,3 +160,5 @@ if __name__ == "__main__":
     a.play(10)
     gif_tool.save_gif('test.gif', duration=1)
     # TODO: test that in jupyter
+
+    print(a.get_segregation_index())
