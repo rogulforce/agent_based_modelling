@@ -2,7 +2,11 @@
 import itertools
 import numpy as np
 # from assignment_3.utils import to_list, from_list
+
+# try:
 from utils import to_list, from_list
+# except:
+#     from .utils import to_list, from_list
 import random
 from copy import copy
 from gif_tool import GifTool

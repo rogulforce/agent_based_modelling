@@ -48,9 +48,6 @@ class Task4(Task):
         return segr
 
 
-model_args = {'size': 100, 'neighbourhood_range': 1, 'n_agents': (1500, 1500), 'j_t': (0.5, 0.5)}
-
-
 def task3_plot_data(model, model_params, max_iter, mc_steps, show: bool = True):
     param_change = np.arange(250, 4001, 50)
 
@@ -76,7 +73,8 @@ def task3_plot_data(model, model_params, max_iter, mc_steps, show: bool = True):
 
 
 def task4_plot_data(model, model_params, max_iter, mc_steps, show: bool = True):
-    param_change = np.arange(0.125, 0.90, 0.125)
+    # param_change = np.arange(0.125, 0.90, 0.125)
+    param_change = np.arange(0.04167, 0.9585, 0.04167)
 
     val_dict = {it: 0 for it in param_change}
 
@@ -99,6 +97,33 @@ def task4_plot_data(model, model_params, max_iter, mc_steps, show: bool = True):
     return val_dict
 
 
+def task5_plot_data(model, model_params, max_iter, mc_steps, show: bool = True):
+    param_change = np.arange(1, 5.1, 1)
+
+    val_dict = {it: 0 for it in param_change}
+
+    for value in tqdm(param_change):
+        model_params['neighbourhood_range'] = int(value)
+        mc_val = Task4().simulation(model=model, mc_steps=mc_steps, model_params=model_params, max_iter=max_iter)
+        val_dict[value] = mc_val
+
+    plt.figure(figsize=(10, 5))
+    plt.grid()
+    plt.scatter(val_dict.keys(), val_dict.values())
+    plt.title(f'{mc_steps} monte carlo steps\nrange from 1 to 5, size={model_params["size"]}, '
+              f'range={model_params["neighbourhood_range"]}, N={model_params["n_agents"]}, j_t={model_params["j_t"]}')
+    plt.xlabel('neighbourhood range')
+    plt.ylabel('segregation index')
+
+    if show:
+        plt.show()
+
+    return val_dict
+
+
+model_args = {'size': 100, 'neighbourhood_range': 2, 'n_agents': (4000, 4000), 'j_t': (0.5, 0.5)}
+
+
 if __name__ == "__main__":
 
     """task 3"""
@@ -112,12 +137,27 @@ if __name__ == "__main__":
     # print(vals)
 
     """task 4"""
-    vals = task4_plot_data(SchellingModel, model_args, max_iter=300, mc_steps=24, show=False)
-    plt.savefig('data/figs/task4_3000_diff.png')
-    print(vals)
+    # vals = task4_plot_data(SchellingModel, model_args, max_iter=300, mc_steps=24, show=False)
+    # plt.savefig('data/figs/task4_3000_diff.png')
+    # print(vals)
 
     """task 4 v2"""
-    task4_plot_data(SchellingModelUnhappy, model_args, max_iter=300, mc_steps=24, show=False)
-    plt.savefig('data/figs/task4_3000_diff_v2.png')
-    print(vals)
+    # vals = task4_plot_data(SchellingModelUnhappy, model_args, max_iter=300, mc_steps=24, show=False)
+    # plt.savefig('data/figs/task4_3000_diff_v2.png')
+    # print(vals)
 
+    """task 4 range = 2"""
+    # vals = task4_plot_data(SchellingModel, model_args, max_iter=300, mc_steps=24, show=False)
+    # plt.savefig('data/figs/task4_range_2.png')
+    # print(vals)
+
+    """task 5"""
+    # vals = task5_plot_data(SchellingModel, model_args, max_iter=300, mc_steps=12, show=False)
+    # plt.savefig('data/figs/task5.png')
+    # print(vals)
+
+    model_args = {'size': 100, 'neighbourhood_range': 2, 'n_agents': (4000, 4000), 'j_t': (0.67, 0.67)}
+
+    vals = task5_plot_data(SchellingModel, model_args, max_iter=300, mc_steps=24, show=False)
+    plt.savefig('data/figs/task5_j_067.png')
+    print(vals)

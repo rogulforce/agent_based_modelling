@@ -8,14 +8,19 @@ import imageio.v2 as imageio
 
 class GifTool:
     """ tool visualizing the model."""
-    def __init__(self, pic_dir: str = 'data/temp', gif_dir: str = 'data/gif'):
+    def __init__(self, pic_dir: str = 'data/temp', gif_dir: str = 'data/gif', cmap=None, bounds=None):
         self.pic_dir = pic_dir
         self.gif_dir = gif_dir
 
         self.clear_dir(self.pic_dir)
 
-        self.cmap = colors.ListedColormap(['white', 'red', 'green'])
-        bounds = [-.5, .5, 1.5, 2.5]
+        if not cmap:
+            self.cmap = colors.ListedColormap(['white', 'red', 'green'])
+            bounds = [-.5, .5, 1.5, 2.5]
+        else:
+            self.cmap = cmap
+            bounds = bounds
+
         self.norm = colors.BoundaryNorm(bounds, self.cmap.N)
         self.img_num = 0
 
