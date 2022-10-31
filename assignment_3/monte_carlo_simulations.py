@@ -9,7 +9,7 @@ from functools import partial
 
 
 class Task:
-
+    """ MC process class """
     @staticmethod
     def single_step(*args, **kwargs):
         raise NotImplementedError
@@ -34,6 +34,7 @@ class Task:
 class Task3(Task):
     @staticmethod
     def single_step(model, model_params, max_iter, _):
+        """ return number of iterations. """
         sim = model(**model_params)
         it = sim.play(max_iter)
         return it
@@ -42,6 +43,7 @@ class Task3(Task):
 class Task4(Task):
     @staticmethod
     def single_step(model, model_params, max_iter, _):
+        """ return segregation index. """
         sim = model(**model_params)
         sim.play(max_iter)
         segr = sim.get_segregation_index()
