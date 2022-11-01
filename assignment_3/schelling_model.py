@@ -77,18 +77,17 @@ class SchellingModel:
         nb_col = [it % self.size for it in range(agent_index[1] - self.neighbourhood_range,
                   (agent_index[1] + self.neighbourhood_range + 1))]
         neighbours = itertools.product(nb_row, nb_col)
-        return [it for it in neighbours if it != agent_index]
+
+        return [it for it in neighbours if list(it) != agent_index]
 
     def get_happiness(self, agent_index: tuple[int, int], agent_type: int):
         """ get happines of given agent."""
         neighbours = from_list(self.get_neighbours(agent_index))
         occupied_cells = np.sum(self.lattice[neighbours[0], neighbours[1]] != 0)
         similar_cells = np.sum(self.lattice[neighbours[0], neighbours[1]] == agent_type)
-        # print(f'neighbours: {neighbours}')
-        # print(f'{similar_cells} / {occupied_cells}')
 
         if occupied_cells == 0:
-            return self.__no_neighbours_validation()  # returns 1
+            return self._no_neighbours_validation()  # returns 1
 
         return similar_cells / occupied_cells
 
@@ -109,9 +108,7 @@ class SchellingModel:
             self.single_iteration()
             if not self.run:
 
-                # print(f'{i} iterations')
                 return i
-        # print(self.lattice)
         return iter_num
 
     def single_iteration(self):
@@ -132,8 +129,7 @@ class SchellingModel:
                 self.move(agent, agent_type)
                 self.run = True
 
-    @staticmethod
-    def __no_neighbours_validation():
+    def _no_neighbours_validation(self):
         """ method validating the happiness of an agent with no neighbours. In that case agent is happy."""
         return 1
 
@@ -158,7 +154,16 @@ class SchellingModel:
 
 class SchellingModelUnhappy(SchellingModel):
     """ Schelling Model where a cell w/o occupied cells around is considered as unhappy."""
-    @staticmethod
-    def __no_neighbours_validation():
+
+    def _no_neighbours_validation(self):
         """ method validating the happiness of an agent with no neighbours. In that case agent is unhappy."""
         return 0
+
+
+if __name__ == "__main__":
+    gif_tool = GifTool()
+    lattice = SchellingModel(size=100, n_agents=(250, 250), gif_tool=gif_tool)
+    lattice.play(50)
+    print(lattice.lattice)
+    print(lattice.get_segregation_index())
+    gif_tool.save_gif('testing.gif')
