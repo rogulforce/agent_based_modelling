@@ -20,7 +20,7 @@ class QVoter:
 
     def reload_operating_opinion(self):
         """ Method initializing opinion of the spinsons to 1. In future this could be changed and improved. """
-        self.operating_opinion = {node: -1 for node in self.init_network.nodes}
+        self.operating_opinion = {node: 1 for node in self.init_network.nodes}
 
     def reload_operating_magnetization(self):
         self.operating_concentration = []
@@ -57,22 +57,21 @@ class QVoter:
                        opinion and with 1-f stays with the current opinion.
             type_of_influence (str): type of choice of the influence group.
         """
-        # (1) 'pick a spinson at random'
-        spinson = np.random.choice(self.operating_network.nodes, 1)[0]
+        # pick network size spinsons at random
+        spinsons = np.random.choice(self.operating_network.nodes, self.network_size)
 
-        # randomly chosen group of influence.
-        influence_group = self.influence_choice(spinson, q, type_of_influence)
-        # only if the q-panel is unanimous
-        if self.unanimous_check(influence_group):
-            # decide with probability p, if the spinson will act as independent
+        for spinson in spinsons:
             if np.random.random() < p:
-                # if independent, change its opinion with probability f
+                # independent state, change its opinion with probability f
                 if np.random.random() < f:
                     opinion = self.operating_opinion[spinson]
                     self.operating_opinion[spinson] = -1 * opinion
             else:
-                # if not independent, let the spinson take the opinion of its group of influence.
-                self.operating_opinion[spinson] = self.operating_opinion[list(influence_group)[0]]
+                # randomly chosen group of influence.
+                influence_group = self.influence_choice(spinson, q, type_of_influence)
+                if self.unanimous_check(influence_group):
+                    # if not independent, let the spinson take the opinion of its group of influence.
+                    self.operating_opinion[spinson] = self.operating_opinion[list(influence_group)[0]]
 
     def simulate(self, num_of_events: int, p: float, q: int, f: float, type_of_influence: str = 'NN'):
         """ Method simulating the opinion spread: <num_of_events> steps.
@@ -89,7 +88,7 @@ class QVoter:
         for event in range(num_of_events):
             # single iteration
             self.single_step(p, q, f, type_of_influence)
-            # add current magnetization to the list
+            # add current concentration to the list
             self.update_concentration_list()
 
         return self.operating_concentration
@@ -119,12 +118,11 @@ class QVoter:
 
 if __name__ == "__main__":
     """ simple check of methods."""
-    n = 10
-    m = 2
-    network = nx.barabasi_albert_graph(n, m)
+    n = 100
+    network = nx.complete_graph(n)
     # print(network)
 
     q_voter = QVoter(network)
 
-    mag = q_voter.simulate(num_of_events=10, p=0.2, q=3, f=0.5)
+    mag = q_voter.simulate(num_of_events=100, p=0, q=4, f=0.5)
     print(mag)
