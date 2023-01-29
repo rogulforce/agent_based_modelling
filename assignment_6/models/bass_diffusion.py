@@ -32,11 +32,13 @@ class BassDiffusionModel:
 
         self.network = np.concatenate([innovators_array, imitators_array])
 
-    def single_step(self, p: float, q: float):
+    def single_step(self, p: float, q: float, time_step_memory):
         """ Single event according to the link.
         Args:
             p (flaot): 0 <= p <= 1.
             q (float): 0 <= f <= 1.
+            time_step_memory (bool). Indicator if in one time step adapters take information from previous state or
+                                     current state.
         """
         # number of not yet adopted nodes
         potential_adapters = self.network_size - len(self.network)
@@ -46,19 +48,29 @@ class BassDiffusionModel:
             self.run = False
             return
 
+        if time_step_memory:
+            # we assume that all adapter may have chance to adapt at once.
+            operating_network = self.network
+
         for _ in range(potential_adapters):
             rnd = np.random.random()
             if rnd < p:
                 # become an innovator
                 self.network = np.append(self.network, 1)
-            elif rnd < p + q * len(self.network)/self.network_size:
-                # become an imitator
-                self.network = np.append(self.network, 2)
+            else:
+                if time_step_memory:
+                    imitator_chance = q * len(operating_network) / self.network_size
+                else:
+                    imitator_chance = q * len(self.network) / self.network_size
+
+                if rnd < p + imitator_chance:
+                    # become an imitator
+                    self.network = np.append(self.network, 2)
 
         self.numbers_over_time.append([self._get_innovators(), self._get_imitators()])
         return
 
-    def simulate(self, p: float, q: float):
+    def simulate(self, p: float, q: float, time_step_memory: bool = False):
         """ Method simulating the opinion spread: <num_of_events> steps.
         Args:
             p (flaot): 0 <= p <= 1.
@@ -66,7 +78,7 @@ class BassDiffusionModel:
         """
 
         while self.run:
-            self.single_step(p, q)
+            self.single_step(p, q, time_step_memory)
         return self.numbers_over_time
 
     def _get_innovators(self):
@@ -85,7 +97,7 @@ if __name__ == "__main__":
     }
     q_voter = BassDiffusionModel(**params)
 
-    vals = q_voter.simulate(0.01, 0.3)
+    vals = q_voter.simulate(0.01, 0.3, time_step_memory=True)
     print(vals)
     print(len(vals))
     #
